@@ -4,10 +4,18 @@ import jakarta.persistence.*;
 
 import java.util.List;
 
-// Sub Query
+// JPQL TYPE 표현과 기타식
 public class JpaMain {
 
     public static void main(String[] args) {
+        /*
+        *   [JPQL 타입 표현]
+        *   문자 : 'HELLO', 'She"s'
+        *   숫자 : 10L(Long) , 10D(Double) , 10F(Float)
+        *   Boolean : TRUE , FALSE
+        *   ENUM : jpabook.MemberType.Admin(패키지명 포함) -> 파라미터 설정해서 사용하자.
+        *   엔티티 타입 : TYPE(m) = Member (상속 관계에서 사용) -> 잘 사용 안한다.
+        * */
 
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("hello");
         EntityManager em = emf.createEntityManager();
@@ -15,29 +23,7 @@ public class JpaMain {
         EntityTransaction tx = em.getTransaction();
         tx.begin(); //  트랜잭션 시작
         try{
-            /*
-            *   [SubQuery]
-            *   나이가 평균보다 많으 회원
-            *   select m from Member m
-            *   where m.age > (select avg(m2.age) from member m2)
-            *
-            *   한 건이라도 주문한 고객
-            *   select m from member m
-            *   where (select count(0) from Order o where m = o.member) > 0
-            *
-            *   [서브쿼리 지원 함수]
-            *   [NOT] EXISTS(subQuery) : 서브 쿼리에 결과가 존재하면 참
-            *       - {ALL | ANY | SOME}(subQuery)
-            *       - ALL 모두 만족하면 참
-            *       - ANY, SOME : 같은 의미, 조건을 하나라도 만족하면 참
-            *   [NOT] IN (subQuery) : 서브 쿼리의 결과 중 하나라도 같은 것이 있으면 참
-            *
-            *   [JPA 서브 쿼리 한계]
-            *   JPA는 WHERE , HAVING 절에서만 서브 쿼리 사용 가능
-            *   SELECT 절도 가능(하이버네이트에서 지원)
-            *   FROM 절의 서브 쿼리는 현재 JPQL에서 불가능(타격이 큼)
-            *       - 조인으로 풀 수 있으면 풀어서 해결
-            * */
+
             Team team = new Team();
             team.setName("TeamA");
             em.persist(team);
@@ -46,23 +32,30 @@ public class JpaMain {
             Member member = new Member();
             member.setUsername("TeamA");
             member.setAge(10);
+            member.setType(MemberType.ADMIN);
             member.setTeam(team);
+
             em.persist(member);
 
             em.flush();
             em.clear();
 
-            //EXISTS 예제
-//            String query = "select m from Member m where exists(select t from m.team t where t.name = 'teamA')";
-
-            // 하이버네이트에서 지원해주는 select 절 예제
-            String query = "select (select avg(m1.age) from Member m1) as avgAge from Member m join Team t on m.username = t.name )";
-            List<Member> result = em.createQuery(query, Member.class)
+            //패키지명 예제
+//            String query = "select m.username,'HELLO',true from Member m " +
+//                            "where m.type = jpql.MemberType.USER";
+            // 파라미터 설정 예제
+            String query = "select m.username,'HELLO',true from Member m " +
+                    "where m.type = :userType";
+            
+            List<Object[]> result = em.createQuery(query)
+                    .setParameter("userType" , MemberType.ADMIN)
                     .getResultList();
 
-            System.out.println("result = " + result.size());
-
-
+            for (Object[] objects : result) {
+                System.out.println("objects[0] = " + objects[0]);
+                System.out.println("objects[1] = " + objects[1]);
+                System.out.println("objects[2] = " + objects[2]);
+            }
             tx.commit(); //  트랜잭션 커밋
         } catch (Exception e){
             tx.rollback();
