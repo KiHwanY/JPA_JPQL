@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 import java.util.List;
 
-// JOIN
+// Sub Query
 public class JpaMain {
 
     public static void main(String[] args) {
@@ -16,11 +16,27 @@ public class JpaMain {
         tx.begin(); //  트랜잭션 시작
         try{
             /*
-            *   [JOIN]
+            *   [SubQuery]
+            *   나이가 평균보다 많으 회원
+            *   select m from Member m
+            *   where m.age > (select avg(m2.age) from member m2)
             *
-            *   - 내부 조인 : SELECT m FROM Member m [INNER] JOIN m.team t
-            *   - 외부 조인 : SELECT m FROM Member m LEFT [OUTER] JOIN m.team t
-            *   - 세타 조인 : SELECT COUNT(m) FROM Member m , Team t where m.username = t.name
+            *   한 건이라도 주문한 고객
+            *   select m from member m
+            *   where (select count(0) from Order o where m = o.member) > 0
+            *
+            *   [서브쿼리 지원 함수]
+            *   [NOT] EXISTS(subQuery) : 서브 쿼리에 결과가 존재하면 참
+            *       - {ALL | ANY | SOME}(subQuery)
+            *       - ALL 모두 만족하면 참
+            *       - ANY, SOME : 같은 의미, 조건을 하나라도 만족하면 참
+            *   [NOT] IN (subQuery) : 서브 쿼리의 결과 중 하나라도 같은 것이 있으면 참
+            *
+            *   [JPA 서브 쿼리 한계]
+            *   JPA는 WHERE , HAVING 절에서만 서브 쿼리 사용 가능
+            *   SELECT 절도 가능(하이버네이트에서 지원)
+            *   FROM 절의 서브 쿼리는 현재 JPQL에서 불가능(타격이 큼)
+            *       - 조인으로 풀 수 있으면 풀어서 해결
             * */
             Team team = new Team();
             team.setName("TeamA");
@@ -36,27 +52,11 @@ public class JpaMain {
             em.flush();
             em.clear();
 
-            //내부 조인 = inner 생략 가능
-//            String query = "select m from Member m inner join m.team t where t.name =:teamName";
-            //외부 조인 = outer 생략 가능
-//            String query = "select m from Member m left join m.team t ";
-            //세타 조인
-//            String query = "select m from Member m, Team t where m.username = t.name ";
+            //EXISTS 예제
+//            String query = "select m from Member m where exists(select t from m.team t where t.name = 'teamA')";
 
-            /*
-             *   [ JOIN - ON 절]
-             *   ON절을 활용한 조인(JPA 2.1부터 지원)
-             *   조인 대상 필터링
-             *   연관관계 없는 엔티티 외부 조인(하이버네이트 5.1부터)
-             * */
-            //조인 대상 필터링
-            //ex) 회원과 팀을 조인하면서, 팀 이름이 TeamA인 팀만 조인
-//            String query = "select m from Member m left join m.team t on t.name = 'TeamA' ";
-
-            //연관관계 없는 엔티티 외부 조인
-            //ex)회원의 이름과 팀의 이름이 같은 대상 외부 조인
-            //주의) 스프링 부트 1점대 쓰거나 하이버네이트 5.1이 이상이 아니면 버전 업해서 사용해야 한다.
-            String query = "select m from Member m left join Team t on m.username = t.name";
+            // 하이버네이트에서 지원해주는 select 절 예제
+            String query = "select (select avg(m1.age) from Member m1) as avgAge from Member m join Team t on m.username = t.name )";
             List<Member> result = em.createQuery(query, Member.class)
                     .getResultList();
 
