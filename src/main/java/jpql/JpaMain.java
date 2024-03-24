@@ -4,18 +4,11 @@ import jakarta.persistence.*;
 
 import java.util.List;
 
-// JPQL TYPE 표현과 기타식
+// 조건식(CASE 등등)
 public class JpaMain {
 
     public static void main(String[] args) {
-        /*
-        *   [JPQL 타입 표현]
-        *   문자 : 'HELLO', 'She"s'
-        *   숫자 : 10L(Long) , 10D(Double) , 10F(Float)
-        *   Boolean : TRUE , FALSE
-        *   ENUM : jpabook.MemberType.Admin(패키지명 포함) -> 파라미터 설정해서 사용하자.
-        *   엔티티 타입 : TYPE(m) = Member (상속 관계에서 사용) -> 잘 사용 안한다.
-        * */
+
 
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("hello");
         EntityManager em = emf.createEntityManager();
@@ -30,7 +23,7 @@ public class JpaMain {
 
 
             Member member = new Member();
-            member.setUsername("TeamA");
+            member.setUsername("관리자");
             member.setAge(10);
             member.setType(MemberType.ADMIN);
             member.setTeam(team);
@@ -40,22 +33,36 @@ public class JpaMain {
             em.flush();
             em.clear();
 
-            //패키지명 예제
-//            String query = "select m.username,'HELLO',true from Member m " +
-//                            "where m.type = jpql.MemberType.USER";
-            // 파라미터 설정 예제
-            String query = "select m.username,'HELLO',true from Member m " +
-                    "where m.type = :userType";
-            
-            List<Object[]> result = em.createQuery(query)
-                    .setParameter("userType" , MemberType.ADMIN)
+
+            /*
+             *   [조건식 - CASE식]
+             * */
+//            String query = "select " +
+//                                    "case when m.age <= 10 then '학생요금'" +
+//                                    "     when m.age >= 60 then '경로요금'" +
+//                                    "     else '일반요금' " +
+//                                    "end" +
+//                            " from  Member m";
+            /*
+             *   [조건식 - CASE식]
+             *   COALESCE : 하나씩 조회해서 NULL이 아니면 반환
+             *   NULLIF : 두 값이 같으면 NULL 반환, 다르면 첫번째 값 반환
+             * */
+            //[COALESCE] -> 사용자 이름이 없으면 이름 없는 회원을 반환
+//            String query = "select coalesce(m.username, '이름 없는 회원')" +
+//                            " from Member m";
+
+            //[NULLIF] -> 사용자 이름이 '관리자'면 null을 반환하고 나머지는 본인의 이름을 반환
+            String query = "select nullif(m.username, '관리자')" +
+                    " from Member m";
+            List<String> resultList = em.createQuery(query, String.class)
                     .getResultList();
 
-            for (Object[] objects : result) {
-                System.out.println("objects[0] = " + objects[0]);
-                System.out.println("objects[1] = " + objects[1]);
-                System.out.println("objects[2] = " + objects[2]);
+            for (String s : resultList) {
+                System.out.println("s = " + s);
             }
+
+
             tx.commit(); //  트랜잭션 커밋
         } catch (Exception e){
             tx.rollback();
