@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.util.List;
 
+// 프로젝션 Section 소개
 public class JpaMain {
 
     public static void main(String[] args) {
@@ -14,36 +15,59 @@ public class JpaMain {
         EntityTransaction tx = em.getTransaction();
         tx.begin(); //  트랜잭션 시작
         try{
+            /*
+            *     [프로젝션]
+            *   - select 절에 조회할 대상을 지정하는 것
+            *   - 프로젝션 대상 : 엔티티 , 임베디드 타입, 스칼라 타입(숫자, 문자 등 기본 데이터 타입)
+            * */
             Member member = new Member();
 
             member.setUsername("member1");
             member.setAge(10);
             em.persist(member);
 
+            em.flush();
+            em.clear();
 
-            Member result = em.createQuery("select m from Member m where m.username =:username", Member.class)
-                            .setParameter("username", "member1")
-                            .getSingleResult();
-            System.out.println("singleResult = " + result.getUsername());
+            // 엔티티 프로젝션
+//            List<Member> result = em.createQuery("select m from Member m", Member.class)
+//                            .getResultList();
+//            Member findMember = result.get(0);
+//            findMember.setAge(20);
 
+            //엔티티 프로젝션 => Join 쿼리가 나간다. 하지만 SQL과 동일하게 작성하는 게 좋다. 아래를 참고하자.
+//            List<Team> result = em.createQuery("select m.team from Member m", Team.class)
+//                    .getResultList();
 
-            //TypedQuery = 반환 타입이 명확할 때 사용
-            //Query = 반환 타입이 명확하지 않을 때 사용
-//            TypedQuery<Member> query = em.createQuery("select m from Member m", Member.class);
-//            TypedQuery<String> query2 = em.createQuery("select m.username from Member m", String.class);
-//            Query query3 = em.createQuery("select m.username, m.age from Member m");
-            //query.getResultList() => 결과가 하나 이상일 때, 리스트 반환 / 결과가 없으면 빈 리스트 반환
-//            List<Member> resultList = query.getResultList();
+            //예측을 위한 명확한 쿼리를 작성하는 게 좋다.
+//            List<Team> result = em.createQuery("select t from Member m join m.team t", Team.class)
+//                    .getResultList();
 
-//            for (Member member1 : resultList) {
-//                System.out.println("member1 = " + member1);
-//            }
+            // 임베디드 프로젝션
+//            em.createQuery("select o.address from Order o", Address.class)
+//                    .getResultList();
 
-            //query.getSingleResult() => 결과가 정확히 하나, 단일 객체 반환
-//            Member result = query.getSingleResult();
-//            System.out.println("result = " + result);
-            // 만약 결과가 없으면 NoResultException 발생
-            // 결과가 둘 이상이면 NonUniqueResultException 발생한다.
+            // 스칼라 타입 프로젝션
+//            em.createQuery("select distinct m.username, m.age from Member m")
+//                    .getResultList();
+
+            // 프로젝션 - 여러 값 조회
+            // 1. Query 타입으로 조회
+//            List resultList = em.createQuery("select  m.username, m.age from Member m")
+//                    .getResultList();
+            //2. Object[] 타입으로 조회
+//            List<Object[]> resultList = em.createQuery("select  m.username, m.age from Member m")
+//                    .getResultList();
+
+            //3. new 명령어로 조회
+            // 제일 깔끔한 방법이지만 문제이기 때문에 패키지 명까지 다 적어줘야 한다. 나중에 QueryDSL 사용하면 극복이 된다.
+            // 순서와 타입이 일치하는 생성자 필요
+            List<MemberDTO> resultList = em.createQuery("select new jpql.MemberDTO(m.username, m.age )from Member m", MemberDTO.class)
+                    .getResultList();
+
+            MemberDTO memberDTO =resultList.get(0);
+            System.out.println("memberDTO = " + memberDTO.getUsername());
+            System.out.println("memberDTO = " + memberDTO.getAge());
 
 
             tx.commit(); //  트랜잭션 커밋
