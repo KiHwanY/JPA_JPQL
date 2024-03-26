@@ -24,6 +24,9 @@ public class Member {
         team.getMembers().add(this);
     }
 
+    public Team getTeam() {
+        return team;
+    }
 
     public Long getId() {
         return id;
