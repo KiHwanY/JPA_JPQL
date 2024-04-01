@@ -4,7 +4,7 @@
 //import org.hibernate.mapping.Collection;
 //
 //import java.util.List;
-////엔티티 직접 사용
+
 //public class JpaMain {
 //
 //
@@ -44,26 +44,7 @@
 //
 //            em.flush();
 //            em.clear();
-//            //엔티티를 파라미터로 전달
-////            String query = "select m from Member m where m = :member";
-//
-//            //식별자를 직접 전달
-////            String query = "select m from Member m where m.id = :memberId";
-//
-//            //외래 키 값 전달
-//            String query = "select m from Member m where m.team = :team";
-//
-//            List<Member> findMember = em.createQuery(query , Member.class)
-//                            .setParameter("team",member1.getTeam()).getResultList();
-//
-//
-//            for (Member members : findMember) {
-//
-//            System.out.println("members = " + members);
-//            }
-//
-//
-//
+
 //            tx.commit(); //  트랜잭션 커밋
 //        } catch (Exception e){
 //            tx.rollback();
