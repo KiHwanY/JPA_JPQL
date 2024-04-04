@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import org.hibernate.mapping.Collection;
 
 import java.util.List;
-
+// 벌크 연산
 public class JpaMain {
 
 
@@ -29,28 +29,31 @@ public class JpaMain {
 
             Member member1 = new Member();
             member1.setUsername("회원1");
+            member1.setAge(0);
             member1.setTeam(teamA);
             em.persist(member1);
             Member member2 = new Member();
             member2.setUsername("회원2");
-            member1.setTeam(teamA);
+            member2.setAge(0);
+            member2.setTeam(teamA);
             em.persist(member2);
 
             Member member3 = new Member();
             member3.setUsername("회원2");
-            member1.setTeam(teamB);
+            member3.setAge(0);
+            member3.setTeam(teamB);
             em.persist(member3);
+            
+            //FLUSH
+            int resultCount = em.createQuery("update Member m set m.age = 20")
+                    .executeUpdate();
 
-            List<Member> resultList = em.createNamedQuery("Member.findByUsername", Member.class)
-                    .setParameter("username", "회원1")
-                    .getResultList();
-
-            for (Member member : resultList) {
-                System.out.println("member = " + member);
-            }
-
-            em.flush();
             em.clear();
+
+            Member findMember = em.find(Member.class, member1.getId());
+
+            System.out.println("findMember.getAge() = " + findMember.getAge());
+
 
             tx.commit(); //  트랜잭션 커밋
         } catch (Exception e){
